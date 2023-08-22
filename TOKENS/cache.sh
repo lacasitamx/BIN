@@ -3,11 +3,11 @@
 #Alias : ChumoGH
 ## 1 - "LIMPEZA DE DNS"
 ip -s -s neigh flush all &> /dev/null
-sysctl -w net.ipv6.conf.all.disable_ipv6=1 &> /dev/null
-sysctl -w net.ipv6.conf.default.disable_ipv6=1 &> /dev/null
-sysctl -w net.ipv6.conf.lo.disable_ipv6=1 &> /dev/null
-sysctl -w net.ipv6.conf.all.autoconf=0 &> /dev/null
-sysctl -w net.ipv6.conf.all.accept_ra=0 &> /dev/null
+#sysctl -w net.ipv6.conf.all.disable_ipv6=1 &> /dev/null
+#sysctl -w net.ipv6.conf.default.disable_ipv6=1 &> /dev/null
+#sysctl -w net.ipv6.conf.lo.disable_ipv6=1 &> /dev/null
+#sysctl -w net.ipv6.conf.all.autoconf=0 &> /dev/null
+#sysctl -w net.ipv6.conf.all.accept_ra=0 &> /dev/null
 ip neigh flush dev $(ip route | grep default | awk '{print $5}' | head -1) &> /dev/null
 ## 2 - "CACHE DO SISTEMA"
 echo 3 > /proc/sys/vm/drop_caches &> /dev/null
