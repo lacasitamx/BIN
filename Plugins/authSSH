@@ -1,0 +1,36 @@
+#!/bin/bash
+#By @ChumoGH|Plus
+clear&&clear
+# exit 1 es fallido
+# exit 0 es exitosa
+
+if [ $# -ne 4 ]; then
+    echo "LOS ARGUMENTOS SON INVALIDOS"
+    exit 1
+fi
+
+ADDR=$1
+AUTH=$2
+SEND=$3
+RECV=$4
+
+[[ $(echo -e "${AUTH}" | grep -i ':') ]] && {
+pUSER=$(echo -e "${AUTH}"| cut -d ':' -f1)
+CLAVE=$(echo -e "${AUTH}"| cut -d ':' -f2)
+ofusMODE=1
+} || {
+pUSER=${AUTH}
+ofusMODE=0
+}
+
+[[ $(cat "/etc/passwd"  | grep -w ${pUSER}) ]] && {
+FValid=$(date +%s)
+UValid=$(chage -l ${pUSER} |grep -i co |cut -d ':' -f2)
+DataSEC=$(date +%s --date="${UValid}")
+[[ ${FValid} -gt ${DataSEC} ]] && exit 0 || {
+[[ ${ofusMODE} = 1 ]] && {
+[[ -e /etc/adm-lite/userDIR/${pUSER} ]] && _PASS=$(cat /etc/adm-lite/userDIR/${pUSER} | grep "senha" | awk '{print $2}')
+[[ ${CLAVE} = ${_PASS} ]] && exit 1 || exit 0
+						} || exit 1
+											}
+} || exit 0
