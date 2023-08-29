@@ -27,10 +27,10 @@ ofusMODE=0
 FValid=$(date +%s)
 UValid=$(chage -l ${pUSER} |grep -i co |cut -d ':' -f2)
 DataSEC=$(date +%s --date="${UValid}")
-[[ ${FValid} -gt ${DataSEC} ]] && exit 0 || {
+[[ ${FValid} -gt ${DataSEC} ]] && exit 1 || {
 [[ ${ofusMODE} = 1 ]] && {
 [[ -e /etc/adm-lite/userDIR/${pUSER} ]] && _PASS=$(cat /etc/adm-lite/userDIR/${pUSER} | grep "senha" | awk '{print $2}')
-[[ ${CLAVE} = ${_PASS} ]] && exit 1 || exit 0
-						} || exit 1
+[[ ${CLAVE} = ${_PASS} ]] && exit 0 || exit 1
+						} || exit 0
 											}
-} || exit 0
+} || exit 1
