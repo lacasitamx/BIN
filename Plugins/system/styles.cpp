@@ -85,18 +85,18 @@ print_center(){
 # titulos y encabesados
 title(){
     clear
-    msg -bar
+    msg -bar3
     if [[ -z $2 ]]; then
       print_center -azu "$1"
     else
       print_center "$1" "$2"
     fi
-    msg -bar
+    msg -bar3
  }
 
 # finalizacion de tareas
  enter(){
-  msg -bar
+  msg -bar3
   text="►► Presione enter para continuar ◄◄"
   if [[ -z $1 ]]; then
     print_center -ama "$text"
@@ -108,9 +108,9 @@ title(){
 
 # opcion, regresar volver/atras
 back(){
-    msg -bar
+    msg -bar3
     echo -ne "$(msg -verd " [0]") $(msg -verm2 ">") " && msg -bra "\033[1;41mVOLVER"
-    msg -bar
+    msg -bar3
  }
 
 menu_item(){
