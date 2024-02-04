@@ -12,6 +12,10 @@ _check3=$7
 _check4=$8
 _check5=$9
 
+archivo_local="/bin/ejecutar/msg"
+archivo_remoto="https://raw.githubusercontent.com/ChumoGH/ADMcgh/main/Plugins/system/styles.cpp"
+
+
 menu_func(){
   local options=${#@}
   local array
@@ -46,7 +50,7 @@ tittle () {
 [[ -z $1 ]] && rt='adm-lite' || rt='ADMcgh'
     clear&&clear
     msg -bar3
-    echo -e "\033[1;44;44m   \033[1;33m=====>>►► 🐲 ChumoGH 💥 Plus 🐲 ◄◄<<=====  \033[0m \033[0;33m[$(less /etc/${rt}/v-local.log)]"
+    echo -e "\033[1;44;44m   \033[1;33m=====>>►► 🐲 ChumoGH 💥 Plus 🐲 ◄◄<<=====\033[0m \033[0;33m[$(less /etc/${rt}/v-local.log)]"
     msg -bar3
 }
 in_opcion(){
@@ -219,14 +223,25 @@ del(){
   done
 }
 
-sysctl -w net.ipv6.conf.all.disable_ipv6=1 &> /dev/null
-sysctl -w net.ipv6.conf.default.disable_ipv6=1 &> /dev/null
-sysctl -w net.ipv6.conf.lo.disable_ipv6=1 &> /dev/null
+# Verificar si la configuración ya ha sido aplicada
+if [[ $(sysctl -n net.ipv6.conf.all.disable_ipv6) -eq 1 &&
+      $(sysctl -n net.ipv6.conf.default.disable_ipv6) -eq 1 &&
+      $(sysctl -n net.ipv6.conf.lo.disable_ipv6) -eq 1 ]]; then
+else
+# Desactivar la configuración IPv6
+    sysctl -w net.ipv6.conf.all.disable_ipv6=1 \
+           -w net.ipv6.conf.default.disable_ipv6=1 \
+           -w net.ipv6.conf.lo.disable_ipv6=1 &> /dev/null
 
-[[ -d /bin/ejecutar ]] && {
-[[ ! -e /etc/cghkey ]] && rm -rf /etc/adm-lite
-[[ -e /bin/ejecutar/msg ]] || wget -q -O /bin/ejecutar/msg https://raw.githubusercontent.com/ChumoGH/ADMcgh/main/Plugins/system/styles.cpp
-} || mkdir /bin/ejecutar
+fi
+
+hash_remoto=$(curl -s "$archivo_remoto" | md5sum | awk '{print $1}')
+hash_local=$(md5sum "$archivo_local" 2>/dev/null | awk '{print $1}')
+
+if [ "$hash_local" != "$hash_remoto" ]; then
+    curl -o "$archivo_local" "$archivo_remoto"
+fi
+
 cor[0]="\033[0m"
 cor[1]="\033[1;34m"
 cor[2]="\033[1;32m"

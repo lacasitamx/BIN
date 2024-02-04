@@ -11,6 +11,33 @@ clear
 dir_user="/userDIR"
 dir="/etc/adm-lite"
 
+add_new_user(){
+  local Fecha=`date +%d-%m-%y-%R`
+  [[ $(cat /etc/passwd |grep $1: |grep -vi [a-z]$1 |grep -v [0-9]$1 > /dev/null) ]] && return 1
+  local valid=$(date '+%C%y-%m-%d' -d " +$3 days")
+  clear
+  msg -bar3
+
+  system=$(cat -n /etc/issue |grep 1 |cut -d ' ' -f6,7,8 |sed 's/1//' |sed 's/      //')
+  distro=$(echo "$system"|awk '{print $1}')
+  vercion=$(echo $system|awk '{print $2}'|cut -d '.' -f1)
+
+  if [[ ${distro} = @(Ubuntu|Debian) ]]; then
+    if [[ ${vercion} = "16" ]]; then
+      passCIFRED=$(openssl passwd -1 $2)
+    else
+      passCIFRED=$(openssl passwd -6 $2)
+    fi
+  fi
+
+  if useradd -M -s /bin/false -e ${valid} -K PASS_MAX_DAYS=$3 -p ${passCIFRED} -c $4,$2 $1 ; then
+	return 1
+  else
+  	return 0
+  fi
+}
+
+
 fun_ip () {
 MEU_IP=$(ip addr | grep 'inet' | grep -v inet6 | grep -vE '127\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | grep -o -E '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | head -1)
 MEU_IP2=$(wget -qO- ipv4.icanhazip.com)
@@ -109,42 +136,36 @@ echo -e "\033[1;37mRestaurando Usuarios...\033[0m"
 [[ -e $HOME/recovery ]] && arq="$HOME/recovery" || return 	
 for user in `cat $arq`
 do
-usuario=$(echo "$user" |awk -F : '{print $1}')
-senha=$(echo "$user" |awk -F : '{print $2}')
-limite=$(echo "$user" |awk -F : '{print $3}')
-data=$(echo "$user" |awk -F : '{print $4}')
-usrHT=$(echo "$user" |awk -F : '{print $5}')
-
-valid=$(date '+%C%y-%m-%d' -d " +$data days")
-datexp=$(date "+%d/%m/%Y" -d " +$data days")
-if cat /etc/passwd |grep $usuario: 1> /dev/null 2>/dev/null
+USER=$(echo "$user" |awk -F : '{print $1}')
+CLAVE=$(echo "$user" |awk -F : '{print $2}')
+LIMITE=$(echo "$user" |awk -F : '{print $3}')
+DIAS=$(echo "$user" |awk -F : '{print $4}')
+NameTKID=$(echo "$user" |awk -F : '{print $5}')
+valid=$(date '+%C%y-%m-%d' -d " +$DIAS days")
+datexp=$(date "+%d/%m/%Y" -d " +$DIAS days")
+if cat /etc/passwd |grep $USER: 1> /dev/null 2>/dev/null
 then
-echo -e "\033[1;37m\033[1;31m$usuario \033[1;37mEXISTE: \033[1;31m$senha  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
+echo -e "\033[1;37m\033[1;31m$USER \033[1;37mEXISTE: \033[1;31m${CLAVE}  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
 else
-echo "$user" |cut -d: -f3 1> /dev/null 2>/dev/null
-  if [ $? = 0 ]
-  then
-  useradd -M -s /bin/false $usuario
-  (echo $senha ; echo $senha) | passwd $usuario > /dev/null 2> /dev/null
-  limit $usuario $limite 1> /dev/null 2> /dev/null
-  [[ $(echo $limite) = "HWID" ]] && echo "senha: $usrHT" > /etc/adm-lite/userDIR/$usuario
-  [[ $(echo $limite) = "TOKEN" ]] && echo "senha: $usrHT" > /etc/adm-lite/userDIR/$usuario
-  [[ "$limite" =~ ^[0-9]+$ ]] && echo "senha: $senha" > /etc/adm-lite/userDIR/$usuario
-  echo "limite: $limite" >> /etc/adm-lite/userDIR/$usuario
-  echo "data: $valid" >> /etc/adm-lite/userDIR/$usuario
-  chage -E $valid $usuario 2> /dev/null
-    [[ $(echo $limite) = "HWID" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-    [[ $(echo $limite) = "TOKEN" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-    [[ "$limite" =~ ^[0-9]+$ ]] && echo -e "\033[1;31m$usuario \033[1;37mRESTORE: \033[1;31m$senha - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-  else
-  useradd -M -s /bin/false $usuario
-  (echo $senha ; echo $senha) | passwd $usuario > /dev/null 2> /dev/null
- [[ $(echo $limite) = "HWID" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
- [[ $(echo $limite) = "TOKEN" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
- [[ "$limite" =~ ^[0-9]+$ ]] && echo -e "\033[1;31m$usuario \033[1;37mRESTORE: \033[1;31m$senha - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-  echo "limite: $limite" >> /etc/adm-lite/userDIR/$usuario
-  chage -E $valid $usuario 2> /dev/null  
-  fi
+add_new_user "${USER}" "${CLAVE}" "${DIAS}" "${LIMITE}" "${newfile}" "${ovpnauth}"
+	if [ $? = 1 ]; then
+	  [[ ${LIMITE} = "HWID" ]] && {
+	  echo "senha: $NameTKID" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$NameTKID \033[1;37mRESTORE: \033[1;31m$LIMITE - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  [[ ${LIMITE} = "TOKEN" ]] && {
+	  echo "senha: $NameTKID" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$NameTKID \033[1;37mRESTORE: \033[1;31m$LIMITE - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  [[ ${LIMITE} =~ ^[0-9]+$ ]] && {
+	  echo "senha: ${CLAVE}" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$USER \033[1;37mRESTORE: \033[1;31m${CLAVE} - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  echo "limite: $LIMITE" >> /etc/adm-lite/userDIR/$USER
+	  echo "data: $valid" >> /etc/adm-lite/userDIR/$USER
+	else
+	  echo -e "\033[1;37m\033[1;31m$USER \033[1;37mESTADO  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
+	fi
 fi
 done
 }
@@ -166,45 +187,38 @@ return
 echo -e "\033[1;37mRestaurando Usuarios de ... $arq\033[0m \n"
 for user in `cat $arq`
 do
-usuario=$(echo "$user" |awk -F : '{print $1}')
-senha=$(echo "$user" |awk -F : '{print $2}')
-limite=$(echo "$user" |awk -F : '{print $3}')
-data=$(echo "$user" |awk -F : '{print $4}')
-usrHT=$(echo "$user" |awk -F : '{print $5}')
-
-valid=$(date '+%C%y-%m-%d' -d " +$data days")
-datexp=$(date "+%d/%m/%Y" -d " +$data days")
-if cat /etc/passwd |grep $usuario: 1> /dev/null 2>/dev/null
+USER=$(echo "$user" |awk -F : '{print $1}')
+CLAVE=$(echo "$user" |awk -F : '{print $2}')
+LIMITE=$(echo "$user" |awk -F : '{print $3}')
+DIAS=$(echo "$user" |awk -F : '{print $4}')
+NameTKID=$(echo "$user" |awk -F : '{print $5}')
+valid=$(date '+%C%y-%m-%d' -d " +$DIAS days")
+datexp=$(date "+%d/%m/%Y" -d " +$DIAS days")
+if cat /etc/passwd |grep $USER: 1> /dev/null 2>/dev/null
 then
-echo -e "\033[1;37m\033[1;31m$usuario \033[1;37mEXISTE: \033[1;31m$senha  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
+echo -e "\033[1;37m\033[1;31m$USER \033[1;37mEXISTE: \033[1;31m${CLAVE}  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
 else
-echo "$user" |cut -d: -f3 1> /dev/null 2>/dev/null
-  if [ $? = 0 ]
-  then
-  useradd -M -s /bin/false $usuario
-  (echo $senha ; echo $senha) | passwd $usuario > /dev/null 2> /dev/null
-  limit $usuario $limite 1> /dev/null 2> /dev/null
-  [[ $(echo $limite) = "HWID" ]] && echo "senha: $usrHT" > /etc/adm-lite/userDIR/$usuario
-  [[ $(echo $limite) = "TOKEN" ]] && echo "senha: $usrHT" > /etc/adm-lite/userDIR/$usuario
-  [[ "$limite" =~ ^[0-9]+$ ]] && echo "senha: $senha" > /etc/adm-lite/userDIR/$usuario
-  echo "limite: $limite" >> /etc/adm-lite/userDIR/$usuario
-  echo "data: $valid" >> /etc/adm-lite/userDIR/$usuario
-  chage -E $valid $usuario 2> /dev/null
-    [[ $(echo $limite) = "HWID" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-    [[ $(echo $limite) = "TOKEN" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-    [[ "$limite" =~ ^[0-9]+$ ]] && echo -e "\033[1;31m$usuario \033[1;37mRESTORE: \033[1;31m$senha - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-  else
-  useradd -M -s /bin/false $usuario
-  (echo $senha ; echo $senha) | passwd $usuario > /dev/null 2> /dev/null
- [[ $(echo $limite) = "HWID" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
- [[ $(echo $limite) = "TOKEN" ]] && echo -e "\033[1;31m$usrHT \033[1;37mRESTORE: \033[1;31m$limite - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
- [[ "$limite" =~ ^[0-9]+$ ]] && echo -e "\033[1;31m$usuario \033[1;37mRESTORE: \033[1;31m$senha - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m $data \033[1;37m Dias\033[0m"
-  echo "limite: $limite" >> /etc/adm-lite/userDIR/$usuario
-  chage -E $valid $usuario 2> /dev/null  
-  fi
+add_new_user "${USER}" "${CLAVE}" "${DIAS}" "${LIMITE}" "${newfile}" "${ovpnauth}"
+	if [ $? = 1 ]; then
+	  [[ ${LIMITE} = "HWID" ]] && {
+	  echo "senha: $NameTKID" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$NameTKID \033[1;37mRESTORE: \033[1;31m$LIMITE - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  [[ ${LIMITE} = "TOKEN" ]] && {
+	  echo "senha: $NameTKID" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$NameTKID \033[1;37mRESTORE: \033[1;31m$LIMITE - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  [[ ${LIMITE} =~ ^[0-9]+$ ]] && {
+	  echo "senha: ${CLAVE}" > /etc/adm-lite/userDIR/$USER
+	  echo -e "\033[1;31m$USER \033[1;37mRESTORE: \033[1;31m${CLAVE} - \033[1;37m[\033[1;31mOk\033[1;37m] \033[1;37mcon\033[1;31m ${DIAS} \033[1;37m Dias\033[0m"
+	  }
+	  echo "limite: $LIMITE" >> /etc/adm-lite/userDIR/$USER
+	  echo "data: $valid" >> /etc/adm-lite/userDIR/$USER
+	else
+	  echo -e "\033[1;37m\033[1;31m$USER \033[1;37mESTADO  [\033[1;31mFAILED\033[1;37m]\033[0m" > /dev/null
+	fi
 fi
 done
-
 
 }
 
