@@ -84,6 +84,7 @@ fi
 sl=$((dias_use + 1))
 i=$((i + 1))
 [[ -z "$limite" ]] && limite="5"
+echo -e "\033[1;31m [ SCRIPT ] \033[1;37m "
 } || {
 linea=$(cat /etc/passwd | grep -w ${user})
 if [[ "${linea}" =~ ,([^:]+): ]]; then
@@ -102,7 +103,7 @@ fi
 sl=$((dias_use + 1))
 i=$((i + 1))
 [[ -z "$limite" ]] && limite="5"
-echo -e "\033[1;31mNo fue posible obtener la contraseña del usuario\033[1;37m ($user)"
+echo -ne "\033[1;31m [ SYSTEM ] \033[1;37m"
 #read -p "Introduzca la contraseña manualmente o pulse ENTER: " pass
  if [ -z "$pass" ]; then
 pass="$user"
