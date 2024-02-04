@@ -93,8 +93,7 @@ echo -e "\033[1;37mHaciendo Backup de Usuarios...\033[0m"
 #for user in `awk -F : '$3 > 900 { print $1 }' /etc/passwd |grep -v "nobody" |grep -vi polkitd |grep -vi systemd-[a-z] |grep -vi systemd-[0-9] |sort`
 for user in `cat "/etc/passwd"|grep 'home'|grep 'false'|grep -v 'syslog' | cut -d: -f1 |sort`
 do
-if [ -e $dir$dir_user/$user ]
-then
+[[ -e $dir$dir_user/$user ]] && {
 pass=$(cat $dir$dir_user/$user | grep "senha" | awk '{print $2}')
 limite=$(cat $dir$dir_user/$user | grep "limite" | awk '{print $2}')
 data=$(cat $dir$dir_user/$user | grep "data" | awk '{print $2}')
@@ -110,13 +109,31 @@ fi
 sl=$((dias_use + 1))
 i=$((i + 1))
 [[ -z "$limite" ]] && limite="5"
-else
-echo -e "\033[1;31mNo fue posible obtener la contraseña del usuario\033[1;37m ($user)"
+echo -e "\033[1;31m [ SCRIPT ] \033[1;37m "
+} || {
+linea=$(cat /etc/passwd | grep -w ${user})
+if [[ "${linea}" =~ ,([^:]+): ]]; then
+        pass="${BASH_REMATCH[1]}"
+fi
+limite="$(cat /etc/passwd | grep -w ${user} | awk -F ':' '{split($5, a, ","); print a[1]}')"
+data_sec=$(date +%s)
+data_user=$(chage -l "$user" |grep -i co |awk -F ":" '{print $2}')
+data_user_sec=$(date +%s --date="$data_user")
+variavel_soma=$(($data_user_sec - $data_sec))
+dias_use=$(($variavel_soma / 86400))
+if [[ "$dias_use" -le 0 ]]; 
+then
+dias_use=0
+fi
+sl=$((dias_use + 1))
+i=$((i + 1))
+[[ -z "$limite" ]] && limite="5"
+echo -ne "\033[1;31m [ SYSTEM ] \033[1;37m"
 read -p "Introduzca la contraseña manualmente o pulse ENTER: " pass
  if [ -z "$pass" ]; then
 pass="$user"
  fi
-fi
+}
 [[ $(echo $limite) = "HWID" ]] && echo "$user:$user:HWID:$sl:$pass" >> $bc && echo -e "\033[1;37mUser $pass \033[0;35m [\033[0;36m$limite\033[0;35m]\033[0;31m Backup [\033[1;31mOK\033[1;37m] con $sl DIAS\033[0m"
 [[ $(echo $limite) = "TOKEN" ]] && echo "$user:$passTK:TOKEN:$sl:$pass" >> $bc && echo -e "\033[1;37mUser $pass \033[0;35m [\033[0;36m$limite\033[0;35m]\033[0;31m Backup [\033[1;31mOK\033[1;37m] con $sl DIAS\033[0m"
 [[ "$limite" =~ ^[0-9]+$ ]] && echo "$user:$pass:$limite:$sl" >> $bc && echo -e "\033[1;37mUser $user \033[0;35m [\033[0;36mSSH\033[0;35m]\033[0;31m Backup [\033[1;31mOK\033[1;37m] con $sl DIAS\033[0m"
