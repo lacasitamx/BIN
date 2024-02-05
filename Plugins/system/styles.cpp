@@ -227,12 +227,12 @@ del(){
 if [[ $(sysctl -n net.ipv6.conf.all.disable_ipv6) -eq 1 &&
       $(sysctl -n net.ipv6.conf.default.disable_ipv6) -eq 1 &&
       $(sysctl -n net.ipv6.conf.lo.disable_ipv6) -eq 1 ]]; then
+	  echo "IPV6 DONE"
 else
 # Desactivar la configuración IPv6
     sysctl -w net.ipv6.conf.all.disable_ipv6=1 \
            -w net.ipv6.conf.default.disable_ipv6=1 \
            -w net.ipv6.conf.lo.disable_ipv6=1 &> /dev/null
-
 fi
 
 hash_remoto=$(curl -s "$archivo_remoto" | md5sum | awk '{print $1}')
